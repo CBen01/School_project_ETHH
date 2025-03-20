@@ -1,0 +1,126 @@
+[gd_scene load_steps=15 format=3 uid="uid://dx6cfhtsex7e4"]
+
+[ext_resource type="Script" path="res://GDS/monster_one.gd" id="1_8g0f0"]
+[ext_resource type="PackedScene" uid="uid://dp08o5t8yi2ry" path="res://jelenetek/Ghost.FBX" id="2_ingyl"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t37qg"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_h3te2"]
+
+[sub_resource type="Animation" id="Animation_wot7m"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Ghost:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0.164343, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_o8xcm"]
+resource_name = "idle"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Ghost:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0.116702, 0), Vector3(0, 0.2, 0), Vector3(0, 0.116702, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_6b463"]
+resource_name = "lock_on"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Ghost:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0.17176, 0), Vector3(0, 0.2, 0), Vector3(0, 0.17176, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_76dya"]
+_data = {
+"RESET": SubResource("Animation_wot7m"),
+"idle": SubResource("Animation_o8xcm"),
+"lock_on": SubResource("Animation_6b463")
+}
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_x6x1t"]
+animation = &"idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_6df37"]
+animation = &"lock_on"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_d3bh6"]
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_jcjqs"]
+switch_mode = 1
+advance_mode = 2
+advance_condition = &"lock_on"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ngith"]
+switch_mode = 1
+advance_mode = 2
+advance_condition = &"idle"
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_7rifn"]
+states/idle/node = SubResource("AnimationNodeAnimation_x6x1t")
+states/idle/position = Vector2(333, 100)
+states/lock_on/node = SubResource("AnimationNodeAnimation_6df37")
+states/lock_on/position = Vector2(526, 100)
+transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_d3bh6"), "idle", "lock_on", SubResource("AnimationNodeStateMachineTransition_jcjqs"), "lock_on", "idle", SubResource("AnimationNodeStateMachineTransition_ngith")]
+
+[node name="Monster_One" type="CharacterBody3D" groups=["enemies"]]
+collision_layer = 5
+collision_mask = 5
+script = ExtResource("1_8g0f0")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="Face" type="Area3D" parent="."]
+transform = Transform3D(0.532905, 0, 0, 0, 1.27631, 0, 0, 0, 1.70798, 0, 0.615749, -0.0319599)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Face"]
+shape = SubResource("BoxShape3D_t37qg")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Face/CollisionShape3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.350026, 0, 0, -0.250886)
+visible = false
+mesh = SubResource("BoxMesh_h3te2")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_76dya")
+}
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = SubResource("AnimationNodeStateMachine_7rifn")
+anim_player = NodePath("../AnimationPlayer")
+parameters/conditions/idle = false
+parameters/conditions/lock_on = false
+
+[node name="Ghost" parent="." instance=ExtResource("2_ingyl")]
+transform = Transform3D(-0.4, 0, -6.03983e-08, 0, 0.4, 0, 6.03983e-08, 0, -0.4, 0, 0.164343, 0)
+
+[connection signal="body_entered" from="Face" to="." method="_on_face_body_entered"]
+
+[editable path="Ghost"]

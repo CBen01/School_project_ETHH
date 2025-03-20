@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://dgg8y5qsokvio"]
+
+[ext_resource type="Script" path="res://item/item_data.gd" id="1_h8oma"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_yr82i"]
+load_path = "res://.godot/imported/lampa.png-1014e8018157667f85abbb870fb297d9.s3tc.ctex"
+
+[resource]
+script = ExtResource("1_h8oma")
+name = "Flashlight"
+description = "Make sure it doesn't run out of battery, so you can actually see where tf you're going."
+stackable = false
+texture = SubResource("CompressedTexture2D_yr82i")

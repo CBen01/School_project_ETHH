@@ -1,0 +1,682 @@
+[gd_scene load_steps=26 format=3 uid="uid://bmlbmxlakq0ha"]
+
+[ext_resource type="Resource" uid="uid://bu3kemfjbk11u" path="res://Inventory/player_inventory.tres" id="1_bs3vo"]
+[ext_resource type="PackedScene" uid="uid://1c7m17mwmpks" path="res://jelenetek/flashlight.tscn" id="1_oa5s3"]
+[ext_resource type="AudioStream" uid="uid://djakm8wheb2wi" path="res://sounds/horror/neck_snap.mp3" id="3_a76j1"]
+[ext_resource type="AudioStream" uid="uid://dbruvh7ho80g" path="res://sounds/horror/horror-body-drop-152091.mp3" id="4_udsx6"]
+[ext_resource type="AudioStream" uid="uid://q3p3j54inrlp" path="res://sounds/horror/horror-jump-scare-effect-4-250456.mp3" id="5_kskg4"]
+[ext_resource type="AudioStream" uid="uid://b0wt1h5ik4c3s" path="res://sounds/walking inside.mp3" id="5_ulinc"]
+
+[sub_resource type="GDScript" id="GDScript_v5uwe"]
+script/source = "extends CharacterBody3D
+
+@export var inventory_data: InventoryData
+var SPEED = 2.5
+const JUMP_VELOCITY = 4.5
+var gravity = 9.8
+var stamina = 100
+var sprinting = false
+
+const LAYER_2 = 1 << 1
+var message = \"You don't have the lever\"
+@onready var message_text: Label = $\"../Player_UI/main_UI/Message\"
+@onready var msg_inf: Label = $\"../Player_UI/main_UI/Message\"
+var motion_audio: AudioStreamPlayer3D
+var sound: String = \"res://sounds/walking inside.mp3\"
+
+
+#raycast
+@onready var player_raycast: RayCast3D = $CameraBase/Camera3D/RayCast3D
+@onready var ghost_detect: RayCast3D = $\"CameraBase/Camera3D/ghost detect\"
+
+
+
+@onready var CameraBase = $CameraBase
+@onready var camera: Camera3D = $CameraBase/Camera3D
+@onready var animationtree : AnimationTree = $CameraBase/Camera3D/AnimationTree
+@onready var player: CharacterBody3D = $\".\"
+
+@onready var flash: AnimationPlayer = $CameraBase/Flashlight/flash
+var flash_ch = false
+
+@onready var scare: AudioStreamPlayer2D = $scare
+
+#UI elements
+@onready var usage_1: Label = $\"../Player_UI/main_UI/Object/Usage#1\"
+@onready var main_ui: Control = $\"../Player_UI/main_UI\"
+@onready var menu: Control = $\"../Player_UI/Menu\"
+@onready var settings: Control = $\"../Player_UI/Settings\"
+@onready var input: Control = $\"../Player_UI/Settings/Input\"
+@onready var sens: Control = $\"../Player_UI/Settings/settings\"
+@onready var object: Label = $\"../Player_UI/main_UI/Object\"
+@onready var mission: Control = $\"../Player_UI/main_UI/Mission\"
+@onready var death_screen: Control = $\"../Player_UI/Death_screen\"
+var play = 0
+
+
+
+func _ready():
+	Global.player_name = String(self.name)
+	motion_audio = $motion
+	motion_audio.stream = load(sound)
+	Input.mouse_mode = 2
+	animationtree.active = true
+	mission.visible = false
+
+func _input(event):
+	if event is InputEventMouseMotion and Global.inventory == 0 and Global.can_move:
+		CameraBase.rotate_x(deg_to_rad(event.relative.y * Global.Ysens))
+		CameraBase.rotation_degrees.x = clamp(CameraBase.rotation_degrees.x, -75, 50)
+		rotation.y -= deg_to_rad(event.relative.x * Global.Xsens)
+
+func  _process(_delta):
+	update_animation_parameters()
+ 
+func _physics_process(delta):
+	
+	$\"../Player_UI/main_UI/Label\".text = \"FPS: %s\\n\" % str(Engine.get_frames_per_second())
+	
+	#ghost detect
+	if ghost_detect.is_colliding():
+		var collision = ghost_detect.get_collider()
+		if collision != null:
+			if collision.name == \"corner_watcher\" and play == 0:
+				scare.play()
+				play = 1
+			else:
+				pass
+	
+	#write names
+	if $CameraBase/Camera3D/RayCast3D.is_colliding():
+		var collision = $CameraBase/Camera3D/RayCast3D.get_collider()
+		if collision != null:
+			object.text = collision.name
+	else:
+		object.text = \"\"
+		
+	#Interactable Usage
+	if $CameraBase/Camera3D/RayCast3D.is_colliding(): 
+		var collision = $CameraBase/Camera3D/RayCast3D.get_collider()
+		if collision != null:
+			var door_animationtree
+			var animationtree
+			var lever_animationtree
+			var light_animatontree
+			var parent = collision.get_parent().get_parent()
+			var door_open_sound
+			var door_close_sound
+			
+			#Door Usage
+			if collision.name == \"Open Door\" or collision.name == \"Close Door\":
+				door_animationtree = parent.get_node(\"AnimationTree\")
+				door_open_sound = collision.get_parent().get_node(\"Door_Open\")
+				door_close_sound = collision.get_parent().get_node(\"Door_Close\")
+			if collision.name == \"Open Door\" and Input.is_action_just_pressed(\"interact\"):
+				door_open_sound.play()
+				door_animationtree[\"parameters/conditions/idle\"] = false
+				door_animationtree[\"parameters/conditions/open\"] = true
+				door_animationtree[\"parameters/conditions/close\"] = false
+				collision.name = \" \"
+				await get_tree().create_timer(.5).timeout
+				collision.name = \"Close Door\"
+			elif collision.name == \"Close Door\" and Input.is_action_just_pressed(\"interact\"):
+				door_close_sound.play()
+				door_animationtree[\"parameters/conditions/idle\"] = false
+				door_animationtree[\"parameters/conditions/open\"] = false
+				door_animationtree[\"parameters/conditions/close\"] = true
+				collision.name = \" \"
+				await get_tree().create_timer(.5).timeout
+				collision.name = \"Open Door\"
+				await get_tree().create_timer(.1).timeout
+				door_animationtree[\"parameters/conditions/idle\"] = true
+				door_animationtree[\"parameters/conditions/open\"] = false
+				door_animationtree[\"parameters/conditions/close\"] = false
+			elif collision.name == \"Unlock Door\" and Input.is_action_just_pressed(\"interact\") and !Global.has_key:
+				message_text.text = \"You don't have the key\"
+				await get_tree().create_timer(1.0).timeout
+				message_text.text = \"\"
+			elif collision.name == \"Unlock Door\" and Input.is_action_just_pressed(\"interact\") and Global.has_key:
+				collision.name = \"Open Door\"
+				message_text.text = \"Door unlocked!\"
+				await get_tree().create_timer(1.0).timeout
+				message_text.text = \"\"
+				
+			#Lever Usage
+			if collision.name == \"Lever\":
+				lever_animationtree = parent.get_node(\"AnimationTree\")
+			if collision.name == \"Lever\" and Input.is_action_just_pressed(\"interact\") and lever_animationtree[\"parameters/conditions/inactive\"] == true:
+				lever_animationtree[\"parameters/conditions/active\"] = true
+				lever_animationtree[\"parameters/conditions/inactive\"] = false
+				parent.get_node(\"lever_use\").play()
+			elif collision.name == \"Lever\" and Input.is_action_just_pressed(\"interact\") and lever_animationtree[\"parameters/conditions/active\"] == true:
+				lever_animationtree[\"parameters/conditions/active\"] = false
+				lever_animationtree[\"parameters/conditions/inactive\"] = true
+				parent.get_node(\"lever_use\").play()
+				
+			#LightSwitch Usage
+			var bulb
+			if collision.name == \"lightswitch\":
+				light_animatontree = parent.get_node(\"AnimationTree\")
+				bulb = parent.get_node(\"lightbulb\").get_node(\"bulb\")
+			if collision.name == \"lightswitch\" and Input.is_action_just_pressed(\"interact\") and light_animatontree[\"parameters/conditions/off\"] == true:
+				light_animatontree[\"parameters/conditions/off\"] = false
+				light_animatontree[\"parameters/conditions/on\"] = true
+				parent.get_node(\"light\").light_energy = 1
+				bulb.material_override = load(\"res://lamps/lamp_on.tres\")
+				parent.get_node(\"switch\").play()
+			elif collision.name == \"lightswitch\" and Input.is_action_just_pressed(\"interact\") and light_animatontree[\"parameters/conditions/on\"] == true:
+				light_animatontree[\"parameters/conditions/off\"] = true
+				light_animatontree[\"parameters/conditions/on\"] = false
+				bulb.material_override = load(\"res://lamps/lamp_off.tres\")
+				parent.get_node(\"light\").light_energy = 0
+				parent.get_node(\"switch\").play()
+				
+			#big shelf Open/Close
+			if collision.name == \"Open Shelf\" or collision.name == \"Close Shelf\":
+				light_animatontree = collision.get_parent().get_node(\"AnimationTree\")
+			if collision.name == \"Open Shelf\" and Input.is_action_just_pressed(\"interact\") and light_animatontree[\"parameters/conditions/close\"] == true:
+				collision.name = \"Close Shelf\"
+				parent.get_node(\"Open\").play()
+				light_animatontree[\"parameters/conditions/close\"] = false
+				light_animatontree[\"parameters/conditions/open\"] = true
+			elif collision.name == \"Close Shelf\" and Input.is_action_just_pressed(\"interact\") and light_animatontree[\"parameters/conditions/open\"] == true:
+				collision.name = \"Open Shelf\"
+				parent.get_node(\"Close\").play()
+				light_animatontree[\"parameters/conditions/close\"] = true
+				light_animatontree[\"parameters/conditions/open\"] = false
+				
+				
+			#Room3_lever
+			if collision.name == \"Put lever back\" and !Global.lever_3 and Input.is_action_just_pressed(\"interact\"):
+				collision.name = \" Put lever back \"
+				message_text.text = message
+				Global.lever_3_count += 1
+				if Global.lever_3_count == 1:
+					$\"../Levers/LeverPoint3/LeverFrame/ Put lever back /sound_effect\".play()
+					message_text.text = \"You need to find the lever first\"
+					Global.lever_r3 = true
+				elif Global.lever_3_count == 3:
+					message_text.text = \"Uhh the lever first?\"
+				elif Global.lever_3_count == 6:
+					message_text.text = \"HELLOOOOO THE LEVER!!?!\"
+				elif Global.lever_3_count == 9:
+					message_text.text = \"GO AND FIND IT FOR GODSAKE\"
+				elif Global.lever_3_count == 12:
+					message_text.text = \"...\"
+				elif Global.lever_3_count == 15:
+					message_text.text = \"Ok. Fuck off\"
+					message = \"\"
+				await get_tree().create_timer(1.5).timeout
+				message_text.text = \"\"
+				collision.name = \"Put lever back\"
+			elif collision.name == \"Put lever back\" and Global.lever_3 and Input.is_action_just_pressed(\"interact\"):
+				message_text.text = \"\"
+				$\"../Levers/LeverPoint3/LeverFrame/Lever\".visible = true
+				$\"../Levers/LeverPoint3/LeverFrame/Lever\".collision_layer |= LAYER_2
+				$\"../Levers/LeverPoint3/LeverFrame/Put lever back\".collision_layer &= ~LAYER_2 
+				mission.visible = false
+	else:
+		pass
+		
+	#death
+	if Global.death == true:
+		await get_tree().create_timer(1.8).timeout
+		Global.Menu = 4
+	
+	
+	#Menu open
+	if Input.is_action_just_pressed(\"Esc\") and !Global.death:
+		if Global.Menu == 0:
+			Global.Menu = 1
+		elif Global.Menu > 0:
+			Global.Menu = Global.Menu - 1
+	
+	#Inventory \"Open\"
+	if Input.is_action_just_pressed(\"inventory\"):
+		if Global.inventory == 0:
+			Global.inventory = 1
+		else:
+			Global.inventory = 0
+			
+	if Global.inventory == 1:
+		Input.mouse_mode = 0
+	
+
+	#Toggle_flash
+	if Input.is_action_just_pressed(\"change\"):
+		if !flash_ch:
+			flash.play(\"chng\")
+			flash_ch = true
+		else:
+			flash.play(\"idle\")
+			flash_ch = false
+
+	#Menu Toggle
+	if Global.Menu == 1:
+		main_ui.visible = false
+		menu.visible = true
+		settings.visible = false
+		Input.mouse_mode = 0
+		Engine.time_scale = 0
+		Global.Ysens = 0
+		Global.Xsens = 0
+		death_screen.visible = false
+	elif Global.Menu == 0 and Global.inventory == 0:
+		main_ui.visible = true
+		menu.visible = false
+		settings.visible = false
+		Input.mouse_mode = 2
+		Engine.time_scale = 1
+		Global.Ysens = Global.Y_back_up
+		Global.Xsens = Global.X_back_up
+		death_screen.visible = false
+	elif Global.Menu == 2:
+		main_ui.visible = false
+		menu.visible = false
+		settings.visible = true
+		Input.mouse_mode = 0
+		Engine.time_scale = 0
+		Global.Ysens = 0
+		Global.Xsens = 0
+		input.visible = false
+		sens.visible = true
+		death_screen.visible = false
+	elif Global.Menu == 3:
+		main_ui.visible = false
+		menu.visible = false
+		settings.visible = true
+		input.visible = true
+		sens.visible = false
+		death_screen.visible = false
+	elif  Global.Menu == 4:
+		Input.mouse_mode = 0
+		main_ui.visible = false
+		menu.visible = false
+		settings.visible = false
+		death_screen.visible = true
+		Engine.time_scale = 0
+		
+		
+		
+		
+	
+	
+	#Battery Usage Labels
+	if $CameraBase/Camera3D/RayCast3D.is_colliding(): 
+		var collision = $CameraBase/Camera3D/RayCast3D.get_collider()
+		if collision != null:
+			if collision.name == \"Battery\":
+				usage_1.text = \"(\" + Global.Interact_button + \") to use\"
+				usage_1.show()
+	else:
+		usage_1.hide()
+	
+	#battery pick up
+	if $CameraBase/Camera3D/RayCast3D.is_colliding(): 
+		var collision = $CameraBase/Camera3D/RayCast3D.get_collider()
+		if collision != null:
+			if collision.name == \"Battery\" and Input.is_action_just_pressed(\"interact\"):
+				collision.get_parent().queue_free()
+				$\"../Batteries/battery_use\".play()
+				Global.EG = 10.0
+	else:
+		pass
+	
+	#Open Menu
+	if Input.is_action_just_pressed(\"menu\"):
+		Input.mouse_mode = 0
+	
+	# Add the gravity.
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+
+	#movement
+	if Global.can_move:
+		var stamina_bar = $\"../Player_UI/main_UI/Stamina/stamina\"
+		var stamina_base = $\"../Player_UI/main_UI/Stamina/base\"
+		#stamina
+		if sprinting:
+			$\"../Player_UI/main_UI/Stamina\".visible = true
+			stamina = stamina - .5
+			stamina_bar.size.x = stamina * 2
+			stamina_base.size.x = 100 * 5
+		
+		else:
+			if stamina < 100:
+				get_tree().create_timer(1.0).timeout
+				stamina = stamina + .5
+				stamina_bar.size.x = stamina * 2
+				stamina_base.size.x = 100 * 5
+			elif stamina == 100:
+				$\"../Player_UI/main_UI/Stamina\".visible = false
+		if stamina > 100:
+			stamina = 100
+			$\"../Player_UI/main_UI/Stamina/stamina\".size.x = stamina * 2
+		elif stamina < 0:
+			stamina = 0
+			$\"../Player_UI/main_UI/Stamina/stamina\".size.x = stamina * 2
+
+		#Sprinting	
+		if Input.is_action_just_pressed(\"sprint\") and stamina > 0:
+			sprinting = true
+			SPEED = 5.0
+			sound = \"res://sounds/running.mp3\"
+			motion_audio.stream = load(sound)
+			if !motion_audio.is_playing():
+				motion_audio.play()
+		elif stamina <= 0:
+			sprinting = false
+			SPEED = 2.5
+			sound = \"res://sounds/walking inside.mp3\"
+			motion_audio.stream = load(sound)
+			if !motion_audio.is_playing():
+				motion_audio.play()
+		
+		if Input.is_action_just_released(\"sprint\") and Global.can_move:
+			sprinting = false
+			SPEED = 2.5
+			sound = \"res://sounds/walking inside.mp3\"
+			motion_audio.stream = load(sound)
+			if !motion_audio.is_playing():
+				motion_audio.play()
+
+		#Crouching
+		if  Input.is_action_just_pressed(\"crouch\"):
+			SPEED = 1.5
+			$CollisionShape3D.scale.y = 0.673
+			$CameraBase/Camera3D.position.y = 0.369
+		elif Input.is_action_just_released(\"crouch\"):
+			SPEED = 2.5
+			$CollisionShape3D.scale.y = 1
+			$CameraBase/Camera3D.position.y = 0.666
+		
+		#Handle jump.
+		if Input.is_action_just_pressed(\"jump\") and is_on_floor():
+			velocity.y = JUMP_VELOCITY
+		# Get the input direction and handle the movement/deceleration.
+		# As good practice, you should replace UI actions with custom gameplay actions.
+		var input_dir = Input.get_vector(\"left\", \"right\", \"up\", \"down\")
+		var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+		if direction:
+			velocity.x = direction.x * SPEED
+			velocity.z = direction.z * SPEED
+		else:
+			velocity.x = 0.0
+			velocity.z = 0.0
+			motion_audio.play()
+	else:
+		motion_audio.stop()
+
+
+	move_and_slide()
+
+
+#Moving Animations
+func update_animation_parameters():
+	if (velocity == Vector3.ZERO) and !Global.death:
+		animationtree[\"parameters/conditions/idle\"] = true
+		animationtree[\"parameters/conditions/moving\"] = false
+		animationtree[\"parameters/conditions/death\"] = false
+	elif Global.death:
+		animationtree[\"parameters/conditions/idle\"] = false
+		animationtree[\"parameters/conditions/moving\"] = false
+		animationtree[\"parameters/conditions/death\"] = true
+		player.velocity = Vector3.ZERO
+	else:
+		animationtree[\"parameters/conditions/idle\"] = false
+		animationtree[\"parameters/conditions/moving\"] = true
+		animationtree[\"parameters/conditions/death\"] = false
+		
+"
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2hje1"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_816cs"]
+
+[sub_resource type="Animation" id="Animation_ft8q8"]
+resource_name = "chng"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.373, 0.137, -0.621), Vector3(0, 0.137, -0.621), Vector3(0.01, 0.651, 0.286)]
+}
+
+[sub_resource type="Animation" id="Animation_wfhbp"]
+resource_name = "idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.01, 0.651, 0.286), Vector3(0, 0.137, -0.621), Vector3(0.373, 0.137, -0.621)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_iwj06"]
+_data = {
+"chng": SubResource("Animation_ft8q8"),
+"idle": SubResource("Animation_wfhbp")
+}
+
+[sub_resource type="Animation" id="Animation_gxafw"]
+resource_name = "dying"
+length = 0.75
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.333333, 0.366667, 0.733333),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.017, 0.666, -0.032), Vector3(-0.017, 0.666, -0.032), Vector3(-0.017, 0.198081, -0.032), Vector3(-0.017, -0.913226, -0.032)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.266667),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(-0.126536, 0, 0), Vector3(-0.127409, 0, 1.5708)]
+}
+tracks/2/type = "audio"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../../motion")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"clips": [{
+"end_offset": 0.0,
+"start_offset": 0.0,
+"stream": ExtResource("3_a76j1")
+}],
+"times": PackedFloat32Array(0)
+}
+tracks/2/use_blend = true
+tracks/3/type = "audio"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("../../fall")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"clips": [{
+"end_offset": 0.0,
+"start_offset": 0.0,
+"stream": ExtResource("4_udsx6")
+}],
+"times": PackedFloat32Array(0.4)
+}
+tracks/3/use_blend = true
+
+[sub_resource type="Animation" id="Animation_xw0t3"]
+resource_name = "idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.017, 0.666, -0.032)]
+}
+
+[sub_resource type="Animation" id="Animation_clmdj"]
+resource_name = "moving"
+loop_mode = 2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.017, 0.666, -0.032), Vector3(-0.017, 0.65, -0.032), Vector3(-0.017, 0.67, -0.032)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_csn8y"]
+_data = {
+"dying": SubResource("Animation_gxafw"),
+"idle": SubResource("Animation_xw0t3"),
+"moving": SubResource("Animation_clmdj")
+}
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_yl6oe"]
+animation = &"dying"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_o1v1l"]
+animation = &"idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aqhwf"]
+animation = &"moving"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_lytw8"]
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w54oh"]
+advance_mode = 2
+advance_condition = &"moving"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_33hug"]
+xfade_time = 0.7
+advance_mode = 2
+advance_condition = &"idle"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_dvs7y"]
+advance_mode = 2
+advance_condition = &"death"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_adnby"]
+advance_mode = 2
+advance_condition = &"death"
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_sv707"]
+states/Start/position = Vector2(205, 100)
+states/dying/node = SubResource("AnimationNodeAnimation_yl6oe")
+states/dying/position = Vector2(500, 185)
+states/idle/node = SubResource("AnimationNodeAnimation_o1v1l")
+states/idle/position = Vector2(378, 100)
+states/moving/node = SubResource("AnimationNodeAnimation_aqhwf")
+states/moving/position = Vector2(650, 100)
+transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_lytw8"), "idle", "moving", SubResource("AnimationNodeStateMachineTransition_w54oh"), "moving", "idle", SubResource("AnimationNodeStateMachineTransition_33hug"), "idle", "dying", SubResource("AnimationNodeStateMachineTransition_dvs7y"), "moving", "dying", SubResource("AnimationNodeStateMachineTransition_adnby")]
+graph_offset = Vector2(0, 34.6054)
+
+[node name="Player" type="CharacterBody3D"]
+script = SubResource("GDScript_v5uwe")
+inventory_data = ExtResource("1_bs3vo")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_2hje1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CollisionShape3D"]
+visible = false
+mesh = SubResource("CapsuleMesh_816cs")
+skeleton = NodePath("../..")
+
+[node name="CameraBase" type="Node3D" parent="."]
+
+[node name="Flashlight" parent="CameraBase" instance=ExtResource("1_oa5s3")]
+transform = Transform3D(-0.199853, -0.0073795, 0.00214789, -0.0024957, 0.0094458, -0.199761, 0.00726927, -0.19964, -0.00953093, 0.373, 0.137, -0.621)
+visible = false
+
+[node name="flash" type="AnimationPlayer" parent="CameraBase/Flashlight"]
+libraries = {
+"": SubResource("AnimationLibrary_iwj06")
+}
+
+[node name="Camera3D" type="Camera3D" parent="CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.017, 0.666, -0.032)
+cull_mask = 1048543
+far = 100.0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="CameraBase/Camera3D"]
+libraries = {
+"": SubResource("AnimationLibrary_csn8y")
+}
+autoplay = "idle"
+
+[node name="AnimationTree" type="AnimationTree" parent="CameraBase/Camera3D"]
+tree_root = SubResource("AnimationNodeStateMachine_sv707")
+anim_player = NodePath("../AnimationPlayer")
+parameters/conditions/death = false
+parameters/conditions/idle = false
+parameters/conditions/moving = false
+
+[node name="RayCast3D" type="RayCast3D" parent="CameraBase/Camera3D"]
+target_position = Vector3(0, 0, -3)
+collision_mask = 2
+hit_from_inside = true
+collide_with_areas = true
+debug_shape_custom_color = Color(2.40654e-06, 0.565024, 0.660334, 1)
+debug_shape_thickness = 5
+
+[node name="ghost detect" type="RayCast3D" parent="CameraBase/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 2.5, 0, 0, 0)
+target_position = Vector3(0, 0, -3)
+collision_mask = 4
+hit_from_inside = true
+collide_with_areas = true
+debug_shape_custom_color = Color(2.40654e-06, 0.565024, 0.660334, 1)
+debug_shape_thickness = 5
+
+[node name="motion" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("5_ulinc")
+attenuation_model = 2
+volume_db = 2.0
+max_distance = 1.5
+bus = &"Sfx"
+parameters/looping = true
+
+[node name="fall" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.817971, 0)
+attenuation_model = 2
+volume_db = 2.0
+max_distance = 1.5
+bus = &"Sfx"
+
+[node name="scare" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_kskg4")

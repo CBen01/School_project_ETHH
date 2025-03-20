@@ -1,0 +1,227 @@
+[gd_scene load_steps=14 format=3 uid="uid://iernj5fyxwit"]
+
+[ext_resource type="Script" path="res://GDS/api_button.gd" id="1_erec8"]
+[ext_resource type="Script" path="res://GDS/upload.gd" id="1_ykbqa"]
+[ext_resource type="FontFile" uid="uid://da437kgrtym85" path="res://zxSpectrumExpanded.ttf" id="2_8d08w"]
+[ext_resource type="Texture2D" uid="uid://cb751hra8xuoj" path="res://textures/upload/face.png" id="4_aifed"]
+[ext_resource type="Script" path="res://GDS/face.gd" id="5_4vpc2"]
+
+[sub_resource type="Gradient" id="Gradient_75hqk"]
+colors = PackedColorArray(0.121569, 0, 0, 1, 0, 0, 0, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_5dam2"]
+frequency = 0.0013
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_pcht3"]
+bump_strength = 10000.0
+color_ramp = SubResource("Gradient_75hqk")
+noise = SubResource("FastNoiseLite_5dam2")
+
+[sub_resource type="LabelSettings" id="LabelSettings_1tgji"]
+font = ExtResource("2_8d08w")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_a8hdq"]
+font = ExtResource("2_8d08w")
+font_size = 32
+font_color = Color(1, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_6jg80"]
+font = ExtResource("2_8d08w")
+font_size = 32
+font_color = Color(0, 1, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_0ph1q"]
+font = ExtResource("2_8d08w")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_sevtq"]
+font = ExtResource("2_8d08w")
+font_size = 32
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ykbqa")
+
+[node name="bg" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("NoiseTexture2D_pcht3")
+
+[node name="face_container" type="Container" parent="."]
+light_mask = 0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.827
+anchor_top = 0.226
+anchor_right = 0.827
+anchor_bottom = 0.226
+offset_left = -182.704
+offset_top = -146.448
+offset_right = 182.296
+offset_bottom = 172.552
+mouse_filter = 2
+
+[node name="face" type="Sprite2D" parent="face_container" node_paths=PackedStringArray("timer")]
+modulate = Color(1, 0, 0, 1)
+self_modulate = Color(0.458824, 0, 0, 1)
+position = Vector2(192, 161)
+scale = Vector2(0.553226, 0.540852)
+texture = ExtResource("4_aifed")
+script = ExtResource("5_4vpc2")
+timer = NodePath("../../Timer")
+
+[node name="Api button" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.707
+anchor_top = 0.497
+anchor_right = 0.707
+anchor_bottom = 0.497
+offset_left = -75.464
+offset_top = -22.056
+offset_right = 74.536
+offset_bottom = 21.944
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_8d08w")
+theme_override_font_sizes/font_size = 32
+text = "Send"
+script = ExtResource("1_erec8")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="Api button"]
+
+[node name="name" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.319
+anchor_top = 0.282
+anchor_right = 0.319
+anchor_bottom = 0.282
+offset_left = -183.488
+offset_top = -25.736
+offset_right = 97.512
+offset_bottom = 26.264
+text = "Write your player name:"
+label_settings = SubResource("LabelSettings_1tgji")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="player_name" type="LineEdit" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.317
+anchor_top = 0.391
+anchor_right = 0.317
+anchor_bottom = 0.391
+offset_left = -179.184
+offset_top = -19.368
+offset_right = 178.816
+offset_bottom = 19.632
+theme_override_fonts/font = ExtResource("2_8d08w")
+theme_override_font_sizes/font_size = 32
+placeholder_text = "Jane Doe"
+caret_blink = true
+caret_blink_interval = 0.1
+
+[node name="error" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.306
+anchor_top = 0.475
+anchor_right = 0.306
+anchor_bottom = 0.475
+offset_left = -156.512
+offset_top = -21.8
+offset_right = 163.488
+offset_bottom = 19.2
+label_settings = SubResource("LabelSettings_a8hdq")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="done" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.306
+anchor_top = 0.475
+anchor_right = 0.306
+anchor_bottom = 0.475
+offset_left = -156.512
+offset_top = -21.8
+offset_right = 163.488
+offset_bottom = 19.2
+label_settings = SubResource("LabelSettings_6jg80")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Timer" type="Timer" parent="."]
+autostart = true
+
+[node name="player_time" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.306
+anchor_top = 0.524
+anchor_right = 0.306
+anchor_bottom = 0.524
+offset_left = -79.512
+offset_top = -11.552
+offset_right = 80.488
+offset_bottom = 11.448
+text = "Your time:"
+label_settings = SubResource("LabelSettings_0ph1q")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="time" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.3
+anchor_top = 0.596
+anchor_right = 0.3
+anchor_bottom = 0.596
+offset_left = -63.6
+offset_top = -11.208
+offset_right = 64.4
+offset_bottom = 11.792
+label_settings = SubResource("LabelSettings_sevtq")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="main_menu" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.706
+anchor_top = 0.721
+anchor_right = 0.706
+anchor_bottom = 0.721
+offset_left = -80.312
+offset_top = -25.208
+offset_right = 80.688
+offset_bottom = 24.792
+theme_override_fonts/font = ExtResource("2_8d08w")
+theme_override_font_sizes/font_size = 30
+text = "Main Menu"
+
+[connection signal="mouse_entered" from="Api button" to="Api button" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="Api button" to="Api button" method="_on_mouse_exited"]
+[connection signal="pressed" from="Api button" to="Api button" method="_on_pressed"]
+[connection signal="request_completed" from="Api button/HTTPRequest" to="Api button" method="_on_http_request_request_completed"]
+[connection signal="mouse_entered" from="player_name" to="Api button" method="_on_player_name_mouse_entered"]
+[connection signal="mouse_exited" from="player_name" to="Api button" method="_on_player_name_mouse_exited"]
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
+[connection signal="timeout" from="Timer" to="face_container/face" method="_on_timer_timeout"]
+[connection signal="mouse_entered" from="main_menu" to="." method="_on_main_menu_mouse_entered"]
+[connection signal="mouse_exited" from="main_menu" to="." method="_on_main_menu_mouse_exited"]
+[connection signal="pressed" from="main_menu" to="." method="_on_main_menu_pressed"]

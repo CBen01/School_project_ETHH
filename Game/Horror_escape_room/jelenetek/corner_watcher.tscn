@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3 uid="uid://bejaofctbmspp"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_b6snj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pllk2"]
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+normal_scale = -16.0
+rim_tint = 0.0
+anisotropy = 1.0
+ao_light_affect = 1.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_eyuac"]
+material = SubResource("StandardMaterial3D_pllk2")
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ss2nd"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yh17m"]
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ovbsu"]
+material = SubResource("StandardMaterial3D_yh17m")
+
+[node name="corner_watcher" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 4
+
+[node name="body" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_b6snj")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="body"]
+mesh = SubResource("CapsuleMesh_eyuac")
+skeleton = NodePath("../..")
+
+[node name="eye" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.153937, 0, -0.0151515, -0.0416843, 0.00620539, -0.0553055, 0.00451143, 0.057336, 0.00598563, -0.157971, 0.668795, 0.420163)
+shape = SubResource("CylinderShape3D_ss2nd")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="eye"]
+mesh = SubResource("CylinderMesh_ovbsu")
+
+[node name="eye2" type="CollisionShape3D" parent="."]
+transform = Transform3D(-0.144402, 0, -0.0245164, -0.0674489, -0.00679717, 0.0518798, 0.0072999, -0.0628038, -0.00561487, 0.159553, 0.668829, 0.429185)
+shape = SubResource("CylinderShape3D_ss2nd")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="eye2"]
+mesh = SubResource("CylinderMesh_ovbsu")

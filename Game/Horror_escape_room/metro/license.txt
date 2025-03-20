@@ -1,0 +1,11 @@
+Model Information:
+* title:	Metro
+* source:	https://sketchfab.com/3d-models/metro-b2017b6b23844e79a72b473b516a577e
+* author:	Elbolillo (https://sketchfab.com/Elbolilloduro)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Metro" (https://sketchfab.com/3d-models/metro-b2017b6b23844e79a72b473b516a577e) by Elbolillo (https://sketchfab.com/Elbolilloduro) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

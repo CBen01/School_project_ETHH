@@ -1,0 +1,288 @@
+[gd_scene load_steps=20 format=3 uid="uid://bmlbmxlakq0ha"]
+
+[ext_resource type="PackedScene" uid="uid://1c7m17mwmpks" path="res://jelenetek/flashlight.tscn" id="1_oa5s3"]
+[ext_resource type="FontFile" uid="uid://c7x10nqishvt8" path="res://zxSpectrumStrict.ttf" id="2_3eh8g"]
+[ext_resource type="FontFile" uid="uid://da437kgrtym85" path="res://zxSpectrumExpanded.ttf" id="3_puhig"]
+
+[sub_resource type="GDScript" id="GDScript_v5uwe"]
+script/source = "extends CharacterBody3D
+
+
+var SPEED = 5.0
+const JUMP_VELOCITY = 4.5
+
+# Get the gravity from the project settings to be synced with RigidBody nodes.
+var gravity = 9.8
+
+@onready var CameraBase = $CameraBase
+@onready var animationtree : AnimationTree = $CameraBase/Camera3D/AnimationTree
+
+
+func _ready():
+	Input.mouse_mode = 2
+	animationtree.active = true
+
+func _input(event):
+	if event is InputEventMouseMotion:
+		CameraBase.rotate_x(deg_to_rad(event.relative.y * -.1))
+		CameraBase.rotation_degrees.x = clamp(CameraBase.rotation_degrees.x, -75, 50)
+		rotation.y -= deg_to_rad(event.relative.x * .1)
+
+func  _process(delta):
+	update_animation_parameters()
+ 
+func _physics_process(delta):
+	if $CameraBase/Camera3D/RayCast3D.is_colliding():
+		var collision = $CameraBase/Camera3D/RayCast3D.get_collider()
+		if collision != null:
+			$Player_UI/main_UI/Object.text = collision.name
+	else:
+		$Player_UI/main_UI/Object.text = \"\"
+		
+	
+	# Add the gravity.
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+
+	if Input.is_action_just_pressed(\"sprint\"):
+		SPEED = 10.0
+	elif Input.is_action_just_released(\"sprint\"):
+		SPEED = 5.0
+
+	if Input.is_action_just_pressed(\"crouch\"):
+		$CollisionShape3D.scale.y = 0.673
+		$CameraBase/Camera3D.position.y = 0.369
+		$CameraBase/Flashlight.position.y = -0.189
+	elif Input.is_action_just_released(\"crouch\"):
+		$CollisionShape3D.scale.y = 1
+		$CameraBase/Camera3D.position.y = 0.666
+		$CameraBase/Flashlight.position.y = 0.189
+	# Handle jump.
+	if Input.is_action_just_pressed(\"jump\") and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+		
+	if Input.is_action_just_pressed(\"menu\"):
+		Input.mouse_mode = 0
+	
+
+	# Get the input direction and handle the movement/deceleration.
+	# As good practice, you should replace UI actions with custom gameplay actions.
+	var input_dir = Input.get_vector(\"left\", \"right\", \"up\", \"down\")
+	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	if direction:
+		velocity.x = direction.x * SPEED
+		velocity.z = direction.z * SPEED
+	else:
+		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.z = move_toward(velocity.z, 0, SPEED)
+
+	move_and_slide()
+
+func update_animation_parameters():
+	if (velocity == Vector3.ZERO):
+		animationtree[\"parameters/conditions/idle\"] = true
+		animationtree[\"parameters/conditions/moving\"] = false
+	else:
+		animationtree[\"parameters/conditions/idle\"] = false
+		animationtree[\"parameters/conditions/moving\"] = true
+		
+"
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2hje1"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_816cs"]
+
+[sub_resource type="Animation" id="Animation_xw0t3"]
+resource_name = "idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../Flashlight:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.556512, 0.131349, -0.497963)]
+}
+
+[sub_resource type="Animation" id="Animation_clmdj"]
+resource_name = "moving"
+length = 0.7
+loop_mode = 2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../Flashlight:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.7),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.556512, 0.131349, -0.497963), Vector3(0.555841, 0.0875551, -0.494035)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_csn8y"]
+_data = {
+"idle": SubResource("Animation_xw0t3"),
+"moving": SubResource("Animation_clmdj")
+}
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_o1v1l"]
+animation = &"idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aqhwf"]
+animation = &"moving"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_lytw8"]
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w54oh"]
+advance_mode = 2
+advance_condition = &"moving"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_33hug"]
+xfade_time = 0.7
+advance_mode = 2
+advance_condition = &"idle"
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_sv707"]
+states/Start/position = Vector2(205, 100)
+states/idle/node = SubResource("AnimationNodeAnimation_o1v1l")
+states/idle/position = Vector2(379, 100)
+states/moving/node = SubResource("AnimationNodeAnimation_aqhwf")
+states/moving/position = Vector2(633, 98)
+transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_lytw8"), "idle", "moving", SubResource("AnimationNodeStateMachineTransition_w54oh"), "moving", "idle", SubResource("AnimationNodeStateMachineTransition_33hug")]
+
+[sub_resource type="LabelSettings" id="LabelSettings_nf3hp"]
+font = ExtResource("2_3eh8g")
+font_size = 35
+
+[sub_resource type="LabelSettings" id="LabelSettings_dm1o8"]
+font = ExtResource("2_3eh8g")
+font_size = 35
+
+[sub_resource type="LabelSettings" id="LabelSettings_wvmln"]
+font = ExtResource("3_puhig")
+font_size = 60
+
+[sub_resource type="LabelSettings" id="LabelSettings_5omlm"]
+font = ExtResource("3_puhig")
+font_size = 40
+
+[node name="Player" type="CharacterBody3D"]
+script = SubResource("GDScript_v5uwe")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_2hje1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CollisionShape3D"]
+mesh = SubResource("CapsuleMesh_816cs")
+skeleton = NodePath("../..")
+
+[node name="CameraBase" type="Node3D" parent="."]
+
+[node name="Flashlight" parent="CameraBase" instance=ExtResource("1_oa5s3")]
+transform = Transform3D(-0.199811, -0.008162, -0.00305413, 0.00376872, -0.0177304, -0.199177, 0.00785768, -0.199045, 0.0178674, 0.556512, 0.131349, -0.497963)
+
+[node name="Camera3D" type="Camera3D" parent="CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 0.992005, 0.126199, 0, -0.126199, 0.992005, -0.017, 0.666, -0.032)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="CameraBase/Camera3D"]
+libraries = {
+"": SubResource("AnimationLibrary_csn8y")
+}
+autoplay = "idle"
+
+[node name="RayCast3D" type="RayCast3D" parent="CameraBase/Camera3D"]
+transform = Transform3D(50, 0, 0, 0, 0.0230363, 39.9894, 0, -0.999735, 0.921452, -0.0281721, -0.0574288, -0.00132332)
+target_position = Vector3(0, 4, 0)
+collision_mask = 2
+
+[node name="AnimationTree" type="AnimationTree" parent="CameraBase/Camera3D"]
+libraries = {
+"": SubResource("AnimationLibrary_csn8y")
+}
+tree_root = SubResource("AnimationNodeStateMachine_sv707")
+anim_player = NodePath("../AnimationPlayer")
+parameters/conditions/idle = false
+parameters/conditions/moving = false
+
+[node name="Player_UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="main_UI" type="Control" parent="Player_UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Battery" type="Label" parent="Player_UI/main_UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -11.0
+grow_horizontal = 2
+grow_vertical = 2
+text = " Battery:"
+label_settings = SubResource("LabelSettings_nf3hp")
+vertical_alignment = 2
+
+[node name="Precentage" type="Label" parent="Player_UI/main_UI/Battery"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 163.0
+offset_right = -0.998901
+grow_horizontal = 2
+grow_vertical = 2
+text = "100"
+label_settings = SubResource("LabelSettings_dm1o8")
+vertical_alignment = 2
+
+[node name="Object" type="Label" parent="Player_UI/main_UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -231.0
+offset_top = -204.0
+offset_right = 260.001
+offset_bottom = 59.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Battery"
+label_settings = SubResource("LabelSettings_wvmln")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="crosshair" type="Label" parent="Player_UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -13.0
+offset_top = -24.0
+offset_right = 14.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "."
+label_settings = SubResource("LabelSettings_5omlm")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://dq44da63fh2ig"]
+
+[ext_resource type="Script" path="res://item/item_data.gd" id="1_6jmpk"]
+[ext_resource type="Texture2D" uid="uid://d0r6cauj00ioc" path="res://textures/lever.png" id="2_7n7x2"]
+
+[resource]
+script = ExtResource("1_6jmpk")
+name = ""
+description = "You might be able to active a mechanism with this"
+stackable = false
+texture = ExtResource("2_7n7x2")

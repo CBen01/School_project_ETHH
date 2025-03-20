@@ -1,0 +1,118 @@
+[gd_scene load_steps=14 format=3 uid="uid://cqxpykqieki4u"]
+
+[ext_resource type="Script" path="res://GDS/player2d.gd" id="1_2kxmy"]
+[ext_resource type="Script" path="res://GDS/player_cam.gd" id="3_q2jih"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hdbmr"]
+size = Vector2(16, 20)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_op2xu"]
+
+[sub_resource type="Animation" id="Animation_e40q7"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("player_sprite:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_op2xu")]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_nn2w8"]
+load_path = "res://.godot/imported/Main_Character_Nameless_Idle_one.png-e9d25b9a8fc867ec868281c330004357.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_fiaud"]
+load_path = "res://.godot/imported/Main_Character_Nameless_Idle.png-3696e6cfa7b403d06adcd565a29719b0.ctex"
+
+[sub_resource type="Animation" id="Animation_i8a5d"]
+resource_name = "idle"
+length = 1.5
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("player_sprite:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.766667),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_nn2w8"), SubResource("CompressedTexture2D_fiaud")]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_l5bfq"]
+load_path = "res://.godot/imported/Main_Character_Nameless_sprint_one.png-5440f9b947bc5ee2cf3966e572efb484.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_t70r5"]
+load_path = "res://.godot/imported/Main_Character_Nameless_sprint_two.png-1bf1261d994c49397b4304940354a502.ctex"
+
+[sub_resource type="Animation" id="Animation_f0nbc"]
+resource_name = "move"
+length = 0.7
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("player_sprite:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_l5bfq"), SubResource("CompressedTexture2D_t70r5")]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4bykd"]
+_data = {
+"RESET": SubResource("Animation_e40q7"),
+"idle": SubResource("Animation_i8a5d"),
+"move": SubResource("Animation_f0nbc")
+}
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ocbto"]
+
+[node name="map" type="Node2D"]
+
+[node name="Player" type="CharacterBody2D" parent="."]
+script = ExtResource("1_2kxmy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+position = Vector2(-3, -2)
+shape = SubResource("RectangleShape2D_hdbmr")
+
+[node name="player_sprite" type="Sprite2D" parent="Player"]
+scale = Vector2(0.1, 0.1)
+texture = SubResource("CompressedTexture2D_op2xu")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Player"]
+libraries = {
+"": SubResource("AnimationLibrary_4bykd")
+}
+autoplay = "idle"
+
+[node name="Player_cam" type="Camera2D" parent="."]
+zoom = Vector2(4, 4)
+script = ExtResource("3_q2jih")
+
+[node name="floor" type="Node2D" parent="."]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="floor"]
+position = Vector2(-4, 25)
+scale = Vector2(20, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/StaticBody2D"]
+shape = SubResource("RectangleShape2D_ocbto")
+
+[node name="ColorRect" type="ColorRect" parent="floor/StaticBody2D/CollisionShape2D"]
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+color = Color(0.340339, 0.340339, 0.340339, 1)

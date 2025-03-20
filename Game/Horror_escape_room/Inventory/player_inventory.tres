@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="InventoryData" load_steps=5 format=3 uid="uid://bu3kemfjbk11u"]
+
+[ext_resource type="Script" path="res://GDS/inventory_data.gd" id="1_v0wam"]
+[ext_resource type="Script" path="res://GDS/slot_data.gd" id="2_fxeui"]
+[ext_resource type="Resource" uid="uid://dovhlyk1bpupv" path="res://item/items/battery.tres" id="4_ucsnu"]
+
+[sub_resource type="Resource" id="Resource_x11my"]
+script = ExtResource("2_fxeui")
+item_data = ExtResource("4_ucsnu")
+quantity = 2
+
+[resource]
+script = ExtResource("1_v0wam")
+slot_datas = Array[ExtResource("2_fxeui")]([null, null, SubResource("Resource_x11my"), null])

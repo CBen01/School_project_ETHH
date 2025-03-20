@@ -1,0 +1,129 @@
+[gd_scene load_steps=9 format=3 uid="uid://bbpa3nprra78o"]
+
+[ext_resource type="Texture2D" uid="uid://d0r6cauj00ioc" path="res://textures/lever.png" id="1_mw5uq"]
+
+[sub_resource type="GDScript" id="GDScript_2cy8b"]
+script/source = "extends Area3D
+
+func _on_body_entered(body: Node3D) -> void:
+	if body.name == \"Player\":
+		$\"../../../Player_UI/main_UI/info/info\".text = \"+1 room three lever\"
+		Global.lever_3 = true
+		self.get_parent().queue_free()
+"
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xt5q1"]
+size = Vector3(0.449463, 0.999527, 0.236084)
+
+[sub_resource type="BoxMesh" id="BoxMesh_0wwhp"]
+
+[sub_resource type="Animation" id="Animation_nxmyi"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Lever:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.103, 0.371, 0.161)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Lever:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 6.28319, 2.61799)]
+}
+
+[sub_resource type="Animation" id="Animation_hxmat"]
+resource_name = "idle"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Lever:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.102562, 0.251159, 0.160585), Vector3(0.103, 0.371, 0.161), Vector3(0.102562, 0.251159, 0.160585)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Lever:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 2.61799), Vector3(0, 6.28319, 2.61799)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_rflmt"]
+_data = {
+"RESET": SubResource("Animation_nxmyi"),
+"idle": SubResource("Animation_hxmat")
+}
+
+[sub_resource type="GDScript" id="GDScript_ckqt0"]
+script/source = "extends Sprite3D
+
+@onready var player: CharacterBody3D = $\"../../../Player\"
+
+
+func _physics_process(delta: float) -> void:
+	if player != null:
+		look_at(player.global_position)
+"
+
+[node name="lever" type="Node3D"]
+
+[node name="Area3D" type="Area3D" parent="."]
+transform = Transform3D(1, 2.98023e-08, 0, 0, 1, 0, 0, 0, 1, 0, -3.57628e-07, 0)
+script = SubResource("GDScript_2cy8b")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.138819, 0.264599, 0.126489)
+shape = SubResource("BoxShape3D_xt5q1")
+
+[node name="Lever" type="StaticBody3D" parent="."]
+transform = Transform3D(-0.165006, -0.340529, 6.7395e-07, 0.0952671, -0.589808, 0, 7.36979e-07, 1.52093e-06, 0.150894, 0.103, 0.371, 0.161)
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Lever"]
+transform = Transform3D(2.59689, 2.38419e-07, 0, 2.12832e-07, 1, 0, 0, 0, 6.11314, -1.52588e-05, 0.00171375, 0)
+shape = SubResource("BoxShape3D_xt5q1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Lever/CollisionShape3D"]
+transform = Transform3D(0.385076, 0, 0, -6.70552e-08, 1, 0, 0, 0, 0.163582, 3.8147e-06, -0.0017128, 0)
+mesh = SubResource("BoxMesh_0wwhp")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_rflmt")
+}
+autoplay = "idle"
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(0.40305, 0, 0, 0, 0.548681, 0, 0, 0, 1, 0, 0.808065, 0.146388)
+visibility_range_end = 5.0
+flip_h = true
+texture = ExtResource("1_mw5uq")
+script = SubResource("GDScript_ckqt0")
+
+[connection signal="body_entered" from="Area3D" to="Area3D" method="_on_body_entered"]

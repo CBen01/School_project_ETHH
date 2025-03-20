@@ -1,0 +1,11 @@
+Model Information:
+* title:	LowPoly Torture Devices
+* source:	https://sketchfab.com/3d-models/lowpoly-torture-devices-0c0dd51bbbe24ee8971da4a544ff96a9
+* author:	iPoly3D (https://sketchfab.com/iPoly3D)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "LowPoly Torture Devices" (https://sketchfab.com/3d-models/lowpoly-torture-devices-0c0dd51bbbe24ee8971da4a544ff96a9) by iPoly3D (https://sketchfab.com/iPoly3D) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

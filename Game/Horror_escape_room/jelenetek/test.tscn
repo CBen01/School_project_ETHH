@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://dvf7nlukk2r5h"]
+
+[ext_resource type="PackedScene" uid="uid://dwg8b5hljnlek" path="res://stuff/scene.gltf" id="1_qet7c"]
+[ext_resource type="PackedScene" uid="uid://q2faaveumalq" path="res://metro/scene.gltf" id="2_ya1g3"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Sketchfab_Scene" parent="." instance=ExtResource("1_qet7c")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.500662, 0, 0.751095)
+
+[node name="Sketchfab_Scene2" parent="." instance=ExtResource("2_ya1g3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3922, 9.53674e-07, 45.4235)
+
+[editable path="Sketchfab_Scene"]
+[editable path="Sketchfab_Scene2"]

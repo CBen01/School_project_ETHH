@@ -1,0 +1,118 @@
+[gd_scene load_steps=13 format=3 uid="uid://1c7m17mwmpks"]
+
+[ext_resource type="AudioStream" uid="uid://clwpanhkpb0wu" path="res://sounds/flaslight_button.mp3" id="1_f222c"]
+[ext_resource type="AudioStream" uid="uid://b8b58tsmbkypu" path="res://sounds/battery_change.wav" id="2_onnwc"]
+
+[sub_resource type="GDScript" id="GDScript_1ub3g"]
+script/source = "extends StaticBody3D
+
+@export var precentage: Label
+@onready var lampa = $SpotLight3D
+var on = false
+var battery_can_change = true
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	$Timer.start()
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta):
+	if Input.is_action_just_pressed(\"flash\") and Global.has_light:
+		on = !on
+		$switch.play()
+	lampa.visible = on
+	$SpotLight3D.light_energy = Global.EG
+	if precentage != null:
+		precentage.text = str(snapped(Global.EG * 10, 0)) + \"%\"
+	if Global.battery_used:
+		$battery_use.play()
+		Global.battery_used = false
+	
+func _on_timer_timeout():
+	if on == true and Global.EG > 0:
+		Global.EG -= .1
+"
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_6du5x"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fgybf"]
+albedo_color = Color(0.121569, 0.121569, 0.121569, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_d3bep"]
+material = SubResource("StandardMaterial3D_fgybf")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_imnq6"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n741j"]
+albedo_color = Color(0.713726, 0.541176, 0, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_h44yc"]
+material = SubResource("StandardMaterial3D_n741j")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_isjvx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2icnf"]
+albedo_color = Color(0.713726, 0.541176, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_p5ni3"]
+material = SubResource("StandardMaterial3D_2icnf")
+
+[node name="Flashlight" type="StaticBody3D"]
+transform = Transform3D(0.2, 0, 0, 0, -0.0305075, -0.19766, 0, 0.19766, -0.0305075, 0, 0, 0)
+collision_layer = 0
+collision_mask = 0
+script = SubResource("GDScript_1ub3g")
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(5, 0, 0, 0, 0.0458131, -4.99978, 0, 4.99978, 0.0458131, 0.024009, 1.04642, -0.00168358)
+layers = 1023
+light_energy = 10.0
+light_indirect_energy = 3.0
+light_volumetric_fog_energy = 20.0
+light_size = 1.0
+light_specular = 3.0
+shadow_enabled = true
+distance_fade_enabled = true
+distance_fade_begin = 1.0
+distance_fade_shadow = 20.0
+distance_fade_length = 20.0
+spot_range = 13.582
+spot_attenuation = 1.27
+spot_angle = 56.9265
+spot_angle_attenuation = 10.9283
+
+[node name="body" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_6du5x")
+disabled = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="body"]
+mesh = SubResource("CylinderMesh_d3bep")
+
+[node name="front" type="CollisionShape3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 0.302443, -3.8743e-07, 0, 7.45058e-08, 1.15233, 0.0544208, 1.1128, -0.0134521)
+shape = SubResource("CapsuleShape3D_imnq6")
+disabled = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="front"]
+transform = Transform3D(1, 0, 0, 0, 1, -1.49012e-08, 0, 1.49012e-08, 1, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_h44yc")
+
+[node name="button" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.199875, 0, 0, 0, 0.406916, -1.80677e-07, 0, 5.02914e-07, 0.171013, 0, 0.149263, -0.500051)
+shape = SubResource("BoxShape3D_isjvx")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="button"]
+mesh = SubResource("BoxMesh_p5ni3")
+
+[node name="Timer" type="Timer" parent="."]
+
+[node name="switch" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("1_f222c")
+bus = &"Sfx"
+
+[node name="battery_use" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_onnwc")
+bus = &"Sfx"
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
